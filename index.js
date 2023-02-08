@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
-import { Readability } from "npm:@mozilla/readability";
+import { Readability } from "https://cdn.skypack.dev/@mozilla/readability";
 
 const USER_AGENT =
   "Mozilla/5.0 (compatible; MaviiBot/1.0; +https://mavii.com/bots)";
