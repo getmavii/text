@@ -4,8 +4,6 @@ import { Readability } from "https://cdn.skypack.dev/@mozilla/readability";
 const USER_AGENT =
   "Mozilla/5.0 (compatible; MaviiBot/1.0; +https://mavii.com/bots)";
 
-export const config = { path: "/" };
-
 export default async (req) => {
   const url = new URL(req.url);
   const pageUrl = url.searchParams.get("url");
