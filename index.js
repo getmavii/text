@@ -8,6 +8,7 @@ const USER_AGENT =
 serve(async (req) => {
   const url = new URL(req.url);
   const pageUrl = url.searchParams.get("url");
+  const startTime = new Date();
 
   let article = null;
 
@@ -38,6 +39,8 @@ serve(async (req) => {
 
   // Pretty print JSON
   const json = JSON.stringify(article, null, 2);
+
+  console.debug({ url: pageUrl, time: new Date() - startTime });
 
   return new Response(json, {
     headers: {
