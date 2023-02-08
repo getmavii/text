@@ -11,27 +11,29 @@ serve(async (req) => {
 
   let article = null;
 
-  try {
-    const res = await fetch(pageUrl, {
-      headers: {
-        "User-Agent": USER_AGENT,
-      },
-    });
+  if (pageUrl) {
+    try {
+      const res = await fetch(pageUrl, {
+        headers: {
+          "User-Agent": USER_AGENT,
+        },
+      });
 
-    if (res.ok) {
-      const body = await res.text();
-      const doc = new DOMParser().parseFromString(body, "text/html");
+      if (res.ok) {
+        const body = await res.text();
+        const doc = new DOMParser().parseFromString(body, "text/html");
 
-      // Parse article
-      article = new Readability(doc).parse();
+        // Parse article
+        article = new Readability(doc).parse();
 
-      // Delete html content
-      delete article.content;
-    } else {
-      console.error(res.statusText);
+        // Delete html content
+        delete article.content;
+      } else {
+        console.error(res.statusText);
+      }
+    } catch (e) {
+      console.error(e);
     }
-  } catch (e) {
-    console.error(e);
   }
 
   // Pretty print JSON
