@@ -32,8 +32,9 @@ app.get("/", async (request, reply) => {
         // Ignore nextPage
         delete article.nextPage;
         reply.send({
-          ...article,
+          url,
           time: new Date() - startTime,
+          ...article,
         });
       }
     );
