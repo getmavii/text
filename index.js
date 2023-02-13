@@ -1,6 +1,7 @@
 import fastify from "fastify";
 import axios from "axios";
 import readabilitySAX from "readabilitySAX";
+import { decodeHTML5 } from "entities";
 
 const app = fastify({ logger: true });
 
@@ -35,6 +36,7 @@ app.get("/", async (request, reply) => {
           url,
           time: new Date() - startTime,
           ...article,
+          text: decodeHTML5(article.text),
         });
       }
     );
