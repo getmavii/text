@@ -1,51 +1,63 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
-import { Readability } from "https://cdn.skypack.dev/@mozilla/readability";
+import fastify from "fastify";
+import axios from "axios";
+import readabilitySAX from "readabilitySAX";
+import { decodeHTML5 } from "entities";
 
-const USER_AGENT =
-  "Mozilla/5.0 (compatible; MaviiBot/1.0; +https://mavii.com/bots)";
+const app = fastify({ logger: true });
 
-serve(async (req) => {
-  const url = new URL(req.url);
-  const pageUrl = url.searchParams.get("url");
+app.get("/", async (request, reply) => {
+  const { url } = request.query;
   const startTime = new Date();
 
-  let article = null;
-
-  if (pageUrl) {
-    try {
-      const res = await fetch(pageUrl, {
-        headers: {
-          "User-Agent": USER_AGENT,
-        },
-      });
-
-      if (res.ok) {
-        const body = await res.text();
-        const doc = new DOMParser().parseFromString(body, "text/html");
-
-        // Parse article
-        article = new Readability(doc).parse();
-
-        // Delete html content
-        delete article.content;
-      } else {
-        console.error(res.statusText);
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  if (!url) {
+    return reply.send({
+      error: "Missing url parameter",
+    });
   }
 
-  // Pretty print JSON
-  const json = JSON.stringify(article, null, 2);
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; MaviiBot/1.0; +https://mavii.com/bots)",
+      },
+      responseType: "stream",
+    });
 
-  console.debug({ url: pageUrl, time: new Date() - startTime });
+    const readability = new readabilitySAX.WritableStream(
+      {
+        pageURL: url,
+        type: "text",
+      },
+      (article) => {
+        // Ignore nextPage
+        delete article.nextPage;
+        reply.send({
+          url,
+          time: new Date() - startTime,
+          ...article,
+          text: decodeHTML5(article.text),
+        });
+      }
+    );
 
-  return new Response(json, {
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=86400",
-    },
-  });
+    response.data.pipe(readability);
+  } catch (error) {
+    reply.send({
+      error: error.message,
+    });
+  }
+
+  return reply;
 });
+
+const start = async () => {
+  try {
+    await app.listen({ port: 4000, host: "::" });
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
+};
+
+start();
