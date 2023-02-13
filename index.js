@@ -6,6 +6,7 @@ const app = fastify({ logger: true });
 
 app.get("/", async (request, reply) => {
   const { url } = request.query;
+  const startTime = new Date();
 
   if (!url) {
     return reply.send({
@@ -30,7 +31,10 @@ app.get("/", async (request, reply) => {
       (article) => {
         // Ignore nextPage
         delete article.nextPage;
-        reply.send(article);
+        reply.send({
+          ...article,
+          time: new Date() - startTime,
+        });
       }
     );
 
