@@ -17,12 +17,6 @@ import nltk
 # Make sure punkt is downloaded
 nltk.download("punkt")
 
-# Setup summarizer
-LANGUAGE = "english"
-stemmer = Stemmer(LANGUAGE)
-summarizer = Summarizer(stemmer)
-summarizer.stop_words = get_stop_words(LANGUAGE)
-
 app = Flask(__name__)
 
 @app.route("/")
@@ -71,8 +65,12 @@ def parse_metadata(url, html):
     "author": page.get_metadata("author"),
   }
 
-def summarize(text, sentences_count=10):
-  parser = PlaintextParser.from_string(text, Tokenizer(LANGUAGE))
+def summarize(text, sentences_count=10, language="english"):
+  stemmer = Stemmer(language)
+  summarizer = Summarizer(stemmer)
+  summarizer.stop_words = get_stop_words(language)
+  
+  parser = PlaintextParser.from_string(text, Tokenizer(language))
   sentences = summarizer(parser.document, sentences_count)
 
   return " ".join([str(sentence) for sentence in sentences])
