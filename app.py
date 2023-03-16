@@ -15,8 +15,9 @@ from sumy.utils import get_stop_words
 import nltk
 
 # Make sure punkt is downloaded
-nltk.download('punkt')
+nltk.download("punkt")
 
+# Setup summarizer
 LANGUAGE = "english"
 stemmer = Stemmer(LANGUAGE)
 summarizer = Summarizer(stemmer)
@@ -58,7 +59,7 @@ def parse_text(html):
   return "\n\n".join(text_paragraphs)
 
 def parse_metadata(url, html):
-  page = metadata_parser.MetadataParser(url=url, html=html)
+  page = metadata_parser.MetadataParser(url=url, html=html, search_head_only=False)
 
   return {
     "url": page.get_discrete_url(),
