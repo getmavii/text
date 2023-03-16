@@ -1,37 +1,64 @@
 from flask import Flask
 from flask import request
+import time
 import requests
 import justext
 import metadata_parser
+
+from sumy.parsers.html import HtmlParser
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.summarizers.lsa import LsaSummarizer as Summarizer
+from sumy.nlp.stemmers import Stemmer
+from sumy.utils import get_stop_words
+
+import nltk
+
+# Make sure punkt is downloaded
+nltk.download('punkt')
+
+LANGUAGE = "english"
+stemmer = Stemmer(LANGUAGE)
+summarizer = Summarizer(stemmer)
+summarizer.stop_words = get_stop_words(LANGUAGE)
 
 app = Flask(__name__)
 
 @app.route("/")
 def index():
   url = request.args.get("url")
+  includeSummary = request.args.get("summarize") == "true"
 
   if url is None:
     return { "error": "No URL provided" }
   else:
-    return parse(url)
+    return parse(url, includeSummary)
 
-def parse(url):
+def parse(url, includeSummary = False):
+  start_time = time.time()
   response = requests.get(url)
-  content = response.content
+  html = response.content
 
-  text = parse_text(content)
-  metadata = parse_metadata(url, content)
+  text = parse_text(html)
+  metadata = parse_metadata(url, html)
 
-  return { "text": text, **metadata }
+  page = { "text": text, **metadata }
 
-def parse_text(content):
-  paragraphs = justext.justext(content, justext.get_stoplist("English"))
+  if includeSummary:
+    page["summary"] = summarize(text)
+
+  page["time"] = time.time() - start_time
+
+  return page
+
+def parse_text(html):
+  paragraphs = justext.justext(html, justext.get_stoplist("English"))
   text_paragraphs = [paragraph.text for paragraph in paragraphs if not paragraph.is_boilerplate]
   
-  return "\n".join(text_paragraphs)
+  return "\n\n".join(text_paragraphs)
 
-def parse_metadata(url, content):
-  page = metadata_parser.MetadataParser(url=url, html=content)
+def parse_metadata(url, html):
+  page = metadata_parser.MetadataParser(url=url, html=html)
 
   return {
     "url": page.get_discrete_url(),
@@ -42,3 +69,9 @@ def parse_metadata(url, content):
     "keywords": page.get_metadata("keywords"),
     "author": page.get_metadata("author"),
   }
+
+def summarize(text, sentences_count=10):
+  parser = PlaintextParser.from_string(text, Tokenizer(LANGUAGE))
+  sentences = summarizer(parser.document, sentences_count)
+
+  return " ".join([str(sentence) for sentence in sentences])
