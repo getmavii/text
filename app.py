@@ -2,7 +2,7 @@ from flask import Flask
 from flask import request
 import time
 import requests
-import justext
+import trafilatura
 import metadata_parser
 
 from sumy.parsers.html import HtmlParser
@@ -40,7 +40,7 @@ def parse(url, includeSummary = False):
     raise Exception("Error fetching page: " + str(response.status_code))
 
   html = response.content
-  text = parse_text(html)
+  text = trafilatura.extract(html)
   metadata = parse_metadata(url, html)
 
   page = { "text": text, **metadata }
@@ -51,12 +51,6 @@ def parse(url, includeSummary = False):
   page["time"] = time.time() - start_time
 
   return page
-
-def parse_text(html):
-  paragraphs = justext.justext(html, justext.get_stoplist("English"))
-  text_paragraphs = [paragraph.text for paragraph in paragraphs if not paragraph.is_boilerplate]
-  
-  return "\n\n".join(text_paragraphs)
 
 def parse_metadata(url, html):
   page = metadata_parser.MetadataParser(url=url, html=html, search_head_only=False)
