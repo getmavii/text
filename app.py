@@ -24,16 +24,22 @@ def index():
   url = request.args.get("url")
   includeSummary = request.args.get("summarize") == "true"
 
-  if url is None:
-    return { "error": "No URL provided" }
+  if url:
+    try:
+      return parse(url, includeSummary)
+    except Exception as e:
+      return { "error": str(e) }
   else:
-    return parse(url, includeSummary)
+    return { "error": "No URL provided" }
 
 def parse(url, includeSummary = False):
   start_time = time.time()
   response = requests.get(url)
-  html = response.content
 
+  if response.status_code != 200:
+    raise Exception("Error fetching page: " + str(response.status_code))
+
+  html = response.content
   text = parse_text(html)
   metadata = parse_metadata(url, html)
 
@@ -69,7 +75,7 @@ def summarize(text, sentences_count=10, language="english"):
   stemmer = Stemmer(language)
   summarizer = Summarizer(stemmer)
   summarizer.stop_words = get_stop_words(language)
-  
+
   parser = PlaintextParser.from_string(text, Tokenizer(language))
   sentences = summarizer(parser.document, sentences_count)
 
