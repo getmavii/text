@@ -1,8 +1,7 @@
 import time
-import requests
+import grequests
 import trafilatura
 import metadata_parser
-import nltk
 from flask import Flask
 from flask import request
 from sumy.parsers.html import HtmlParser
@@ -11,9 +10,6 @@ from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer as Summarizer
 from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
-
-# Make sure punkt is downloaded
-nltk.download("punkt")
 
 USER_AGENT = "Mozilla/5.0 (compatible; MaviiBot/1.0; +https://mavii.com/bots)"
 
@@ -35,7 +31,8 @@ def index():
 def parse(url, includeSummary = False):
   start_time = time.time()
   headers = { "User-Agent": USER_AGENT }
-  response = requests.get(url, headers=headers)
+  responses = grequests.map([grequests.get(url, headers=headers)])
+  response = responses[0]
 
   if response.status_code != 200:
     raise Exception("Error fetching page: " + str(response.status_code))
