@@ -9,4 +9,4 @@ RUN python -m nltk.downloader punkt
 COPY . .
 
 EXPOSE 5000
-CMD [ "gunicorn", "--bind=0.0.0.0:5000", "--worker-class=gevent", "--workers=1", "app:app"]
+CMD [ "gunicorn", "--bind=0.0.0.0:5000", "--workers=1", "--threads=4", "app:app"]

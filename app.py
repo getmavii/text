@@ -1,10 +1,10 @@
 import time
-import grequests
+import requests
 import trafilatura
+from trafilatura.settings import use_config
 import metadata_parser
 from flask import Flask
 from flask import request
-from sumy.parsers.html import HtmlParser
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer as Summarizer
@@ -12,6 +12,10 @@ from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
 
 USER_AGENT = "Mozilla/5.0 (compatible; MaviiBot/1.0; +https://mavii.com/bots)"
+
+# Disable extraction timeout to fix "signal only works in the main thread" error
+tconfig = use_config()
+tconfig.set("DEFAULT", "EXTRACTION_TIMEOUT", "0")
 
 app = Flask(__name__)
 
@@ -31,14 +35,13 @@ def index():
 def parse(url, includeSummary = False):
   start_time = time.time()
   headers = { "User-Agent": USER_AGENT }
-  responses = grequests.map([grequests.get(url, headers=headers)])
-  response = responses[0]
+  response = requests.get(url, headers=headers)
 
   if response.status_code != 200:
     raise Exception("Error fetching page: " + str(response.status_code))
 
   html = response.content
-  text = trafilatura.extract(html)
+  text = trafilatura.extract(html, config=tconfig)
   metadata = parse_metadata(url, html)
 
   page = { "text": text, **metadata }
