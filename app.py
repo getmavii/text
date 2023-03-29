@@ -28,9 +28,14 @@ def index():
     try:
       return parse(url, includeSummary)
     except Exception as e:
+      print(e)
       return { "error": str(e) }
   else:
     return { "error": "No URL provided" }
+  
+@app.route("/status")
+def status():
+  return "ok"
 
 def parse(url, includeSummary = False):
   start_time = time.time()
