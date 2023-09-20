@@ -12,6 +12,7 @@ from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
 
 USER_AGENT = "Mozilla/5.0 (compatible; MaviiBot/1.0; +https://mavii.com/bots)"
+TIMEOUT = 20
 
 # Disable extraction timeout to fix "signal only works in the main thread" error
 tconfig = use_config()
@@ -40,10 +41,14 @@ def status():
 def parse(url, includeSummary = False):
   start_time = time.time()
   headers = { "User-Agent": USER_AGENT }
-  response = requests.get(url, headers=headers)
 
-  if response.status_code != 200:
-    raise Exception("Error fetching page: " + str(response.status_code))
+  try:
+    response = requests.get(url, headers=headers, timeout=TIMEOUT)
+    response.raise_for_status()
+  except requests.exceptions.Timeout:
+    raise Exception("Timeout fetching page.")
+  except requests.exceptions.RequestException as e:
+    raise Exception("Error fetching page: " + str(e))
 
   html = response.content
   text = trafilatura.extract(html, config=tconfig)
