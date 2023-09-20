@@ -29,10 +29,10 @@ def index():
     try:
       return parse(url, includeSummary)
     except Exception as e:
-      print(e)
-      return { "error": str(e) }
+      app.logger.error(e)
+      return { "error": str(e) }, 500
   else:
-    return { "error": "No URL provided" }
+    return { "error": "No URL provided" }, 400
   
 @app.route("/status")
 def status():
